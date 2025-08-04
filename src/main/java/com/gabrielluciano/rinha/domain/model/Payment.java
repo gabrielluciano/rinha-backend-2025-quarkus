@@ -1,12 +1,12 @@
 package com.gabrielluciano.rinha.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class Payment {
 
     private String correlationId;
     private double amount;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
     private PaymentProcessorType processor;
 
     public Payment() {
@@ -20,7 +20,7 @@ public class Payment {
         this.correlationId = correlationId;
         this.amount = amount;
         this.processor = processor;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = Instant.now();
     }
 
     public String getCorrelationId() {
@@ -47,11 +47,11 @@ public class Payment {
         this.processor = processor;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 }

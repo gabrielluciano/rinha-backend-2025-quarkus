@@ -3,12 +3,13 @@ package com.gabrielluciano.rinha.domain.repository;
 import com.gabrielluciano.rinha.domain.model.Payment;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @ApplicationScoped
 public interface PaymentRepository {
 
     void savePayment(Payment payment);
-    List<Payment> getPayments(LocalDateTime from, LocalDateTime to);
+
+    List<Payment> getPayments(Instant from, Instant to);
 }

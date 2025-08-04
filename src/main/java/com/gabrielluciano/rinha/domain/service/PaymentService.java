@@ -6,7 +6,7 @@ import com.gabrielluciano.rinha.domain.model.ProcessorPaymentSummary;
 import com.gabrielluciano.rinha.domain.repository.PaymentRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @ApplicationScoped
@@ -28,7 +28,7 @@ public class PaymentService {
         }
     }
 
-    public List<ProcessorPaymentSummary> getPaymentSummary(LocalDateTime from, LocalDateTime to) {
+    public List<ProcessorPaymentSummary> getPaymentSummary(Instant from, Instant to) {
         if (from == null || to == null)
             throw new IllegalArgumentException("Both 'from' and 'to' parameters must be provided");
         return createPaymentSummary(repository.getPayments(from, to));

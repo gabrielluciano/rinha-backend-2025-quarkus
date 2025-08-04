@@ -9,7 +9,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -31,9 +31,11 @@ public class PaymentResource {
 
     @GET
     @Path("payments-summary")
-    public Map<String, ProcessorPaymentSummaryResponse> summary(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
-        if (to == null)
-            to = LocalDateTime.now();
+    public Map<String, ProcessorPaymentSummaryResponse> summary(@QueryParam("from") Instant from, @QueryParam("to") Instant to) {
+        if (to == null) {
+            to = Instant.now();
+        }
+
         return paymentService.getPaymentSummary(from, to).stream()
                 .collect(Collectors.toMap(
                         summary -> summary.processor().getName(),

@@ -8,8 +8,7 @@ import io.quarkus.redis.datasource.sortedset.ScoreRange;
 import io.quarkus.redis.datasource.sortedset.SortedSetCommands;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.List;
 
 @ApplicationScoped
@@ -32,7 +31,7 @@ public class RedisPaymentRepository implements PaymentRepository {
         if (idHash.hexists(HSET_KEY, payment.getCorrelationId())) {
             return;
         }
-        long timestamp = payment.getTimestamp().toEpochSecond(ZoneOffset.UTC);
+        long timestamp = payment.getTimestamp().getEpochSecond();
         dataSource.withTransaction(tx -> {
             tx.hash(String.class, String.class, String.class).hset(HSET_KEY, payment.getCorrelationId(), "1");
             tx.sortedSet(String.class, Payment.class).zadd(SORTED_SET_KEY, timestamp, payment);
@@ -40,9 +39,9 @@ public class RedisPaymentRepository implements PaymentRepository {
     }
 
     @Override
-    public List<Payment> getPayments(LocalDateTime from, LocalDateTime to) {
-        long fromTimestamp = from.toEpochSecond(ZoneOffset.UTC);
-        long toTimestamp = to.toEpochSecond(ZoneOffset.UTC);
+    public List<Payment> getPayments(Instant from, Instant to) {
+        long fromTimestamp = from.getEpochSecond();
+        long toTimestamp = to.getEpochSecond();
         return paymentHash.zrangebyscore(SORTED_SET_KEY, ScoreRange.from(fromTimestamp, toTimestamp));
     }
 }
