@@ -38,6 +38,10 @@ public class PaymentResource {
     @GET
     @Path("payments-summary")
     public byte[] summary(@QueryParam("from") Instant from, @QueryParam("to") Instant to) {
+        if (from == null) {
+            from = Instant.EPOCH;
+        }
+
         if (to == null) {
             to = Instant.now();
         }

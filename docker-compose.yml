@@ -1,6 +1,6 @@
 services:
   api1: &api
-    image: gabrielluciano/rinha-2025-quarkus:1.0.0
+    image: gabrielluciano/rinha-2025-quarkus:1.0.1
     hostname: api1
     depends_on:
       - redis
@@ -13,7 +13,7 @@ services:
       - REDIS_PORT=6379
       - DEFAULT_PROCESSOR_URL=http://payment-processor-default:8080
       - FALLBACK_PROCESSOR_URL=http://payment-processor-fallback:8080
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=OFF
     deploy:
       resources:
         limits:
@@ -29,7 +29,7 @@ services:
       - REDIS_PORT=6379
       - DEFAULT_PROCESSOR_URL=http://payment-processor-default:8080
       - FALLBACK_PROCESSOR_URL=http://payment-processor-fallback:8080
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=OFF
 
   redis:
     image: redis:8.2.0

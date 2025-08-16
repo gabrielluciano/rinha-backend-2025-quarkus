@@ -16,4 +16,4 @@ docker compose up -d
 sleep 5
 
 cd ../rinha-de-backend-2025/rinha-test
-k6 run rinha.js
+k6 run -e MAX_REQUESTS=550 rinha.js
