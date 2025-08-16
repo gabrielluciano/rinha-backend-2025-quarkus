@@ -1,8 +1,10 @@
 package com.gabrielluciano.rinha.application.resource;
 
+import com.alibaba.fastjson2.JSON;
 import com.gabrielluciano.rinha.application.dto.PaymentRequest;
 import com.gabrielluciano.rinha.application.dto.ProcessorPaymentSummaryResponse;
 import com.gabrielluciano.rinha.domain.service.PaymentService;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -12,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Path("/")
@@ -28,24 +29,27 @@ public class PaymentResource {
 
     @POST
     @Path("payments")
-    public void pay(PaymentRequest payment) {
+    public Uni<Void> pay(byte[] request) {
+        PaymentRequest payment = JSON.parseObject(request, PaymentRequest.class);
         log.info("Received payment request: {}", payment);
-        paymentService.processPayment(payment.toDomainModel());
+        return paymentService.processPayment(payment.toDomainModel());
     }
 
     @GET
     @Path("payments-summary")
-    public Map<String, ProcessorPaymentSummaryResponse> summary(@QueryParam("from") Instant from, @QueryParam("to") Instant to) {
+    public byte[] summary(@QueryParam("from") Instant from, @QueryParam("to") Instant to) {
         if (to == null) {
             to = Instant.now();
         }
 
-        return paymentService.getPaymentSummary(from, to).stream()
+        var result = paymentService.getPaymentSummary(from, to).stream()
                 .collect(Collectors.toMap(
                         summary -> summary.processor().getName(),
                         summary -> new ProcessorPaymentSummaryResponse(
                                 summary.totalRequests(),
                                 summary.totalAmount()
                         )));
+
+        return JSON.toJSONBytes(result);
     }
 }

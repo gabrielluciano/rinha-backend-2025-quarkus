@@ -2,6 +2,7 @@ package com.gabrielluciano.rinha.infra.event;
 
 import com.gabrielluciano.rinha.domain.model.PaymentEvent;
 import com.gabrielluciano.rinha.domain.service.PaymentEventPublisher;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.eventbus.EventBus;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -15,7 +16,7 @@ public class DefaultPaymentEventPublisher implements PaymentEventPublisher {
     }
 
     @Override
-    public void publishPaymentEvent(PaymentEvent event) {
-        bus.publish("payment.event", event);
+    public Uni<Void> publishPaymentEvent(PaymentEvent event) {
+        return Uni.createFrom().voidItem().onItem().invoke(() -> bus.publish("payment.event", event));
     }
 }

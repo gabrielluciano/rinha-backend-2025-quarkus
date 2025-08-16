@@ -13,10 +13,11 @@ services:
       - REDIS_PORT=6379
       - DEFAULT_PROCESSOR_URL=http://payment-processor-default:8080
       - FALLBACK_PROCESSOR_URL=http://payment-processor-fallback:8080
+      - LOG_LEVEL=INFO
     deploy:
       resources:
         limits:
-          cpus: "0.4"
+          cpus: "0.65"
           memory: "100MB"
 
   api2:
@@ -28,6 +29,7 @@ services:
       - REDIS_PORT=6379
       - DEFAULT_PROCESSOR_URL=http://payment-processor-default:8080
       - FALLBACK_PROCESSOR_URL=http://payment-processor-fallback:8080
+      - LOG_LEVEL=INFO
 
   redis:
     image: redis:8.2.0
@@ -36,7 +38,7 @@ services:
       redis-server
       --save ""
       --appendonly no
-      --maxmemory 512mb
+      --maxmemory 50mb
       --maxmemory-policy allkeys-lru
       --maxclients 1000
     healthcheck:
@@ -50,8 +52,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "100MB"
+          cpus: "0.1"
+          memory: "50MB"
 
   nginx:
     image: nginx:1.29.1
@@ -68,8 +70,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "50MB"
+          cpus: "0.1"
+          memory: "100MB"
 
 networks:
   backend:

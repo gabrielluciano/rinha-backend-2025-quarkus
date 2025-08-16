@@ -1,7 +1,10 @@
 package com.gabrielluciano.rinha.domain.model;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.time.Instant;
 
+@RegisterForReflection
 public class Payment {
 
     private String correlationId;
@@ -53,5 +56,13 @@ public class Payment {
 
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return "Payment{" +
+                "correlationId='" + correlationId + '\'' +
+                ", processor=" + processor +
+                '}';
     }
 }

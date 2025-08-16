@@ -5,6 +5,7 @@ import com.gabrielluciano.rinha.domain.model.PaymentEvent;
 import com.gabrielluciano.rinha.domain.model.PaymentProcessorType;
 import com.gabrielluciano.rinha.domain.model.ProcessorPaymentSummary;
 import com.gabrielluciano.rinha.domain.repository.PaymentRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
@@ -22,8 +23,8 @@ public class PaymentService {
         this.paymentEventPublisher = paymentEventPublisher;
     }
 
-    public void processPayment(Payment payment) {
-        paymentEventPublisher.publishPaymentEvent(PaymentEvent.from(payment));
+    public Uni<Void> processPayment(Payment payment) {
+        return paymentEventPublisher.publishPaymentEvent(PaymentEvent.from(payment));
     }
 
     public List<ProcessorPaymentSummary> getPaymentSummary(Instant from, Instant to) {

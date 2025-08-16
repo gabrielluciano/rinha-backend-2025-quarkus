@@ -1,9 +1,9 @@
 package com.gabrielluciano.rinha.domain.service;
 
 import com.gabrielluciano.rinha.domain.model.PaymentEvent;
-import io.vertx.core.Future;
+import io.smallrye.mutiny.Uni;
 
 public interface PaymentEventPublisher {
 
-    void publishPaymentEvent(PaymentEvent event);
+    Uni<Void> publishPaymentEvent(PaymentEvent event);
 }

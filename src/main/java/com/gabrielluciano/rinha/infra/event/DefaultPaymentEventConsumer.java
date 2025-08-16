@@ -1,10 +1,11 @@
 package com.gabrielluciano.rinha.infra.event;
 
+import com.gabrielluciano.rinha.domain.model.Payment;
 import com.gabrielluciano.rinha.domain.model.PaymentEvent;
-import com.gabrielluciano.rinha.domain.repository.PaymentRepository;
 import com.gabrielluciano.rinha.domain.service.PaymentEventConsumer;
 import com.gabrielluciano.rinha.domain.service.PaymentProcessorService;
 import com.gabrielluciano.rinha.infra.service.DeadLetterQueueService;
+import com.gabrielluciano.rinha.infra.service.PaymentProcessorDecisionService;
 import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,14 +20,14 @@ public class DefaultPaymentEventConsumer implements PaymentEventConsumer {
     public static final String PAYMENT_EVENT_CHANNEL = "payment.event";
 
     private final PaymentProcessorService paymentProcessorService;
-    private final PaymentRepository repository;
+    private final PaymentProcessorDecisionService paymentProcessorDecisionService;
     private final DeadLetterQueueService dlq;
 
     public DefaultPaymentEventConsumer(PaymentProcessorService paymentProcessorService,
-                                       PaymentRepository repository,
+                                       PaymentProcessorDecisionService paymentProcessorDecisionService,
                                        DeadLetterQueueService dlq) {
         this.paymentProcessorService = paymentProcessorService;
-        this.repository = repository;
+        this.paymentProcessorDecisionService = paymentProcessorDecisionService;
         this.dlq = dlq;
     }
 
@@ -36,7 +37,6 @@ public class DefaultPaymentEventConsumer implements PaymentEventConsumer {
         log.info("Processing payment event: {}", event);
         try {
             processPaymentEvent(event);
-            log.debug("Event processed successfully: {}", event);
         } catch (Exception e) {
             log.error("Processing failed, sending to DLQ: {}", event, e);
             sendToDLQ(event);
@@ -49,8 +49,9 @@ public class DefaultPaymentEventConsumer implements PaymentEventConsumer {
 
     @Override
     public void processPaymentEvent(PaymentEvent event) {
-        var payment = event.toPayment();
-        paymentProcessorService.processPayment(payment);
-        repository.savePayment(payment);
+        var processor = paymentProcessorDecisionService.getActiveProcessor();
+        Payment payment = event.toPayment();
+        paymentProcessorService.processPayment(payment, processor);
+        log.info("Payment processed successfully: {}", payment);
     }
 }

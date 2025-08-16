@@ -18,7 +18,7 @@ public class ProcessorHealthCheckTriggerScheduler {
         this.paymentProcessorDecisionService = paymentProcessorDecisionService;
     }
 
-    @Scheduled(every = "6s")
+    @Scheduled(every = "5s")
     @Blocking
     @RunOnVirtualThread
     void checkProcessorHealth() {
