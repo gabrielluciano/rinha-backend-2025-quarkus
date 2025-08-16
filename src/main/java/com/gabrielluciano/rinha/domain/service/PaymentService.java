@@ -1,6 +1,7 @@
 package com.gabrielluciano.rinha.domain.service;
 
 import com.gabrielluciano.rinha.domain.model.Payment;
+import com.gabrielluciano.rinha.domain.model.PaymentEvent;
 import com.gabrielluciano.rinha.domain.model.PaymentProcessorType;
 import com.gabrielluciano.rinha.domain.model.ProcessorPaymentSummary;
 import com.gabrielluciano.rinha.domain.repository.PaymentRepository;
@@ -13,19 +14,16 @@ import java.util.List;
 public class PaymentService {
 
     private final PaymentRepository repository;
-    private final PaymentProcessorService paymentProcessorService;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     public PaymentService(PaymentRepository repository,
-                          PaymentProcessorService paymentProcessorService) {
+                          PaymentEventPublisher paymentEventPublisher) {
         this.repository = repository;
-        this.paymentProcessorService = paymentProcessorService;
+        this.paymentEventPublisher = paymentEventPublisher;
     }
 
     public void processPayment(Payment payment) {
-        boolean processed = paymentProcessorService.processPayment(payment);
-        if (processed) {
-            repository.savePayment(payment);
-        }
+        paymentEventPublisher.publishPaymentEvent(PaymentEvent.from(payment));
     }
 
     public List<ProcessorPaymentSummary> getPaymentSummary(Instant from, Instant to) {

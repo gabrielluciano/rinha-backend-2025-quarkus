@@ -8,6 +8,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class PaymentResource {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentResource.class);
     private final PaymentService paymentService;
 
     public PaymentResource(PaymentService paymentService) {
@@ -26,6 +29,7 @@ public class PaymentResource {
     @POST
     @Path("payments")
     public void pay(PaymentRequest payment) {
+        log.info("Received payment request: {}", payment);
         paymentService.processPayment(payment.toDomainModel());
     }
 

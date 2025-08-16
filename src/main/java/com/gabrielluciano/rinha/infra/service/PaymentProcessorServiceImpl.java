@@ -1,6 +1,7 @@
 package com.gabrielluciano.rinha.infra.service;
 
 import com.gabrielluciano.rinha.domain.model.Payment;
+import com.gabrielluciano.rinha.domain.model.PaymentProcessorType;
 import com.gabrielluciano.rinha.domain.service.PaymentProcessorService;
 import com.gabrielluciano.rinha.infra.client.DefaultPaymentProcessorClient;
 import com.gabrielluciano.rinha.infra.client.FallbackPaymentProcessorClient;
@@ -9,6 +10,7 @@ import com.gabrielluciano.rinha.infra.client.model.PaymentProcessorRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,28 +35,44 @@ public class PaymentProcessorServiceImpl implements PaymentProcessorService {
     private FallbackPaymentProcessorClient fallbackPaymentProcessorClient;
 
     @Override
-    public boolean processPayment(Payment payment) {
+    public void processPayment(Payment payment) {
         var processor = paymentProcessorDecisionService.getActiveProcessor();
-        return switch (processor) {
+        if (processor == PaymentProcessorType.NONE) {
+            log.warn("No active payment processor available, skipping DLQ processing");
+            throw new IllegalStateException("No active payment processor available");
+        }
+        payment.setProcessor(processor);
+        switch (processor) {
             case DEFAULT -> processWithDefaultProcessor(payment);
             case FALLBACK -> processWithFallbackProcessor(payment);
-        };
+        }
     }
 
-    private boolean processWithDefaultProcessor(Payment payment) {
-        return processPaymentWithProcessor(payment, defaultPaymentProcessorClient);
+    private void processWithDefaultProcessor(Payment payment) {
+        processPaymentWithProcessor(payment, defaultPaymentProcessorClient);
     }
 
-    private boolean processWithFallbackProcessor(Payment payment) {
-        return processPaymentWithProcessor(payment, fallbackPaymentProcessorClient);
+    private void processWithFallbackProcessor(Payment payment) {
+        processPaymentWithProcessor(payment, fallbackPaymentProcessorClient);
     }
 
-    private boolean processPaymentWithProcessor(Payment payment, PaymentProcessorClient client) {
+    private void processPaymentWithProcessor(Payment payment, PaymentProcessorClient client) {
         try (RestResponse<Void> response = client.processPayment(PaymentProcessorRequest.fromPayment(payment))) {
-            return response.getStatus() == 200;
+            // Ok, don't do anything
+        } catch (ClientWebApplicationException e) {
+            if (e.getResponse().getStatus() == 422) {
+                log.warn("Payment already processed, ignoring: {}", payment.getCorrelationId());
+            } else {
+                if (client instanceof DefaultPaymentProcessorClient) {
+                    paymentProcessorDecisionService.setProcessorHealth(PaymentProcessorType.DEFAULT, false);
+                } else {
+                    paymentProcessorDecisionService.setProcessorHealth(PaymentProcessorType.FALLBACK, false);
+                }
+            }
+            throw e; // Re-throw other client exceptions
         } catch (Exception e) {
             log.error("Error from payment processor of type '{}':", client.getClass().getSimpleName(), e);
+            throw e;
         }
-        return false;
     }
 }

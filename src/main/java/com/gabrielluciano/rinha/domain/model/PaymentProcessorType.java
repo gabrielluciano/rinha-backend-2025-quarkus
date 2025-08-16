@@ -1,7 +1,7 @@
 package com.gabrielluciano.rinha.domain.model;
 
 public enum PaymentProcessorType {
-    DEFAULT("default"), FALLBACK("fallback");
+    DEFAULT("default"), FALLBACK("fallback"), NONE("none");
 
     private final String name;
 

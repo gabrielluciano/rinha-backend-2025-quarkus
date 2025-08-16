@@ -14,8 +14,6 @@ import org.jboss.resteasy.reactive.RestResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 @ApplicationScoped
 public class PaymentProcessorDecisionService {
 
@@ -36,36 +34,39 @@ public class PaymentProcessorDecisionService {
     }
 
     public PaymentProcessorType getActiveProcessor() {
-        return Optional.ofNullable(processorRepository.getActiveProcessor())
-                .orElse(PaymentProcessorType.DEFAULT);
+        return determineActiveProcessor();
     }
 
-    public void updateActiveProcessor() {
-        // TODO: Implement distributed locking to avoid call processor health check concurrently
+    public void updateProcessorsHealth() {
+        boolean lockAcquired = processorRepository.tryAcquireLock();
+        if (!lockAcquired) {
+            log.debug("Could not acquire lock for processor health check, skipping update.");
+            return;
+        }
         var defaultHealth = getProcessorHealth(defaultPaymentProcessorClient);
         var fallbackHealth = getProcessorHealth(fallbackPaymentProcessorClient);
-        var processorType = determineActiveProcessor(defaultHealth, fallbackHealth);
-        processorRepository.saveProcessor(processorType);
+
+        processorRepository.saveProcessorHealthy(PaymentProcessorType.DEFAULT, !defaultHealth.failing());
+        processorRepository.saveProcessorHealthy(PaymentProcessorType.FALLBACK, !fallbackHealth.failing());
     }
 
-    private PaymentProcessorType determineActiveProcessor(
-            PaymentProcessorHealthResponse defaultHealth,
-            PaymentProcessorHealthResponse fallbackHealth) {
-        boolean defaultHealthy = !defaultHealth.failing();
-        boolean fallbackHealthy = !fallbackHealth.failing();
-        if (defaultHealthy && fallbackHealthy) {
-            log.debug("Both payment processors are healthy, calculating active based on response times.");
-            // TODO: Implement logic to choose based on response times, for now we default to default processor
+    private PaymentProcessorType determineActiveProcessor() {
+        var defaultProcessorHealthy = processorRepository.isProcessorHealthy(PaymentProcessorType.DEFAULT);
+        var fallbackProcessorHealthy = processorRepository.isProcessorHealthy(PaymentProcessorType.FALLBACK);
+
+        if (defaultProcessorHealthy && fallbackProcessorHealthy) {
+            log.debug("Both payment processors are healthy, using default.");
+            // OPTIONAL: Implement logic to choose based on response times, for now we default to default processor
             return PaymentProcessorType.DEFAULT;
-        } else if (defaultHealthy) {
+        } else if (defaultProcessorHealthy) {
             log.debug("Default payment processor is healthy, using it.");
             return PaymentProcessorType.DEFAULT;
-        } else if (fallbackHealthy) {
+        } else if (fallbackProcessorHealthy) {
             log.debug("Fallback payment processor is healthy, using it.");
             return PaymentProcessorType.FALLBACK;
         } else {
-            log.debug("Both payment processors are unhealthy, defaulting to fallback.");
-            return PaymentProcessorType.FALLBACK;
+            log.debug("Both payment processors are unhealthy.");
+            return PaymentProcessorType.NONE;
         }
     }
 
@@ -78,5 +79,9 @@ public class PaymentProcessorDecisionService {
             log.error("Error from payment processor of type '{}':", client.getClass().getSimpleName(), e);
         }
         return new PaymentProcessorHealthResponse(true, 0);
+    }
+
+    public void setProcessorHealth(PaymentProcessorType processor, boolean healthy) {
+        processorRepository.saveProcessorHealthy(processor, healthy);
     }
 }
