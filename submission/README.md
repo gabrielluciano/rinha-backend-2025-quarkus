@@ -9,6 +9,7 @@ Stack utilizada
 - [GitHub](https://github.com/gabrielluciano)
 - [Linkedin](https://www.linkedin.com/in/gabriel-lucianosouza/)
 - [Twitter](https://twitter.com/biel_luciano)
+- [Bsky](https://bsky.app/profile/gabrielluciano.com)
 
 ## Repo
 
